@@ -19,8 +19,7 @@ entry_point:
 
         call SplashScreen
 
-:
-        jp :-
+:       jp :-
 
 
 

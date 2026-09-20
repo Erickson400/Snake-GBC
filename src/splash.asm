@@ -8,80 +8,37 @@ SplashScreen::
         ld bc, tiles.end - tiles
         call Memcopy
 
-        ; Copy tilemap and attributes to VRAM
-        ld bc, 0
-        push bc                 ; X counter. + 8
-        push bc                 ; Y Counter. + 6
-        ld bc, tilemap
-        push bc                 ; Tilemap read pointer. + 4
-        ld bc, attribute_map
-        push bc                 ; Attributes read pointer. + 2
-        ld bc, TILEMAP0
-        push bc                 ; Tilemap/Attributes write pointer. + 0
-                ; for {
-                ;         Memcopy(tilemap, TILEMAP0, 20)
-                ;         switch_vbank
-                ;         Memcopy(attribute_map, TILEMAP0, 20)
-                ;         switch_vbank
-                ;         x++
-                ;         if x == 20 {
-                ;                 x = 0
-                ;                 y++
-                ;                }
-                ;         if y == 18 {
-                ;                 break
-                ;         }
-                ;         tilemap += 20
-                ;         attribute_map += 20
-                ;         TILEMAP0 += 32
-                ; }
-.copy_loop:
-        ; Copy section
-        ld hl, sp + 4           ; Tilemap read pointer
-        ld d, h :: ld e, l
-        ld hl, sp + 0           ; Tilemap write pointer
-        ld bc, 20
-        call Memcopy
-        ld a, 1
-        ld [rVBK], a            ; Switch to bank 1
-        ld hl, sp + 2           ; Attributes read pointer
-        ld d, h :: ld e, l
-        ld hl, sp + 0           ; Attributes write pointer
-        ld bc, 20
-        call Memcopy
-        xor a
-        ld [rVBK], a            ; Switch to bank 0
+        ; Clear the tilemap
+        ld hl, $9800
+        ld bc, $400
+        ld d, $0D
+        call Memset
 
-        ; Update counters
-        ld hl, sp + 8   ; X
-        ld a, [hl]
-        inc a
-        ld [hl], a
-        cp 20 :: jp nz, :+
+        ; Copy tilemap to VRAM
+        ld de, tilemap
+        ld hl, TILEMAP0
+        ld bc, tilemap.end - tilemap
+        call Memcopy
+
+        ; Clear the attributes
+        ld a, 1
+        ld [rVBK], a
+        ld hl, $9800
+        ld bc, $400
+        ld d, 0
+        call Memset
         xor a
-        ld [hl], a
-        ld hl, sp + 6   ; Y
-        ld a, [hl]
-        inc a
-        ld [hl], a
-:       ld hl, sp + 6   ; Y
-        ld a, [hl]
-        cp 18 :: jp z, .break
-        ; Increment pointers
-        ld hl, sp + 4           ; Tilemap read pointer
-        ld a, [hl]
-        add 20
-        ld [hl], a
-        ld hl, sp + 2           ; Attributes read pointer
-        ld a, [hl]
-        add 20
-        ld [hl], a
-        ld hl, sp + 0           ; Tilemap/Attributes write pointer
-        ld a, [hl]
-        add 32
-        ld [hl], a
-        jp .copy_loop
-.break:
+        ld [rVBK], a
+
+        ; Copy attributes to VRAM 
+        ld a, 1
+        ld [rVBK], a
+        ld de, attribute_map
+        ld hl, TILEMAP0
+        ld bc, attribute_map.end - attribute_map
+        call Memcopy
+        xor a
+        ld [rVBK], a
 
         ; Copy palettes to CRAM
         ld a, %1000_0000        ; auto-increment, CRAM address 0
@@ -92,6 +49,12 @@ SplashScreen::
         ld [rBGPD], a
         dec c
         jr nz, :-
+
+        ; Scroll
+        ld a, -25
+        ld [rSCX], a
+        ld a, -50
+        ld [rSCY], a
 
         ; Turn on screen
         ld a, LCDC_ENABLE | LCDC_BLOCK01
