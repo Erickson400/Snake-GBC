@@ -61,6 +61,19 @@ SplashScreen::
         ld [rLCDC], a
         
         ; Fade out to black
+        
+        sleep(120 frames)
+        for 240 {
+                Dim the first color on palette 0
+                sleep(30 frames)
+                If color reached 0 or is lower than 0 then exit loop
+        }
+        
+        
+        
+
+
+
         ret
 
 
