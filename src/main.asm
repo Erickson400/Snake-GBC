@@ -21,9 +21,13 @@ entry_point:
 
 :       jp :-
 
+SECTION "VBlank Interrupt Jump", ROM0[$40]
+VBlank_Jump:
+        jp VBlankRoutineAddress
 
-
-SECTION "Stack", WRAM0
+SECTION "System", WRAM0
 Stack::
-    ds 256
+        ds 256
 .top::
+VBlankRoutineAddress::
+        dw

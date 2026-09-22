@@ -1,4 +1,5 @@
 INCLUDE "hardware.inc"
+INCLUDE "macros.inc"
 
 SECTION "Splash Screen", ROM0
 SplashScreen::
@@ -61,21 +62,66 @@ SplashScreen::
         ld [rLCDC], a
         
         ; Fade out to black
-        
-        sleep(120 frames)
-        for 240 {
-                Dim the first color on palette 0
-                sleep(30 frames)
-                If color reached 0 or is lower than 0 then exit loop
-        }
-        
-        
-        
+        ; Setup VBlank interrupt
+        ld bc, VBlank_ISR
+        ld hl, VBlankRoutineAddress
+        ld a, c
+        ld [hl+], a
+        ld a, b
+        ld [hl], a
+        ld a, IE_VBLANK
+        ldh [rIE], a
+        ei
 
+        ; Wait 120 frames (2 seconds)
+        ld a, 120
+:       halt
+        dec a
+        jp nz, :-
 
-
+        ;       fade_out_palette_address = fade_out_palettes
+        ;       for {
+        ;               wait_for_VBlank()
+        ;               Memcopy(game_palette, fade_out_palette_address, 16)
+        ;               fade_out_palette_address += 16
+        ;                if fade_out_palette_address == fade_out_palettes.end{
+        ;                        break
+        ;                }
+        ;       }
+        ; Fade palettes
+        ld bc, fade_out_palettes
+        push bc                         ; sp + 0. Fade-out palettes, 60 entries of 16 bytes
+:       halt
+        ld a, %1000_0000                ; auto-increment, CRAM address 0
+        ld [rBGPI], a
+        DerefStackOffset 0
+        ld b, 16                         ; paste 16 bytes
+:       ld a, [hl+]
+        ld [rBGPD], a
+        dec b
+        jr nz, :-
+        
+        ; Increment palette address
+        pop de
+        pop hl
+        ld bc, 16
+        add hl, bc
+        push hl
+        push de
+        pop hl                           ; Increment Counter
+        ld bc, 1
+        add hl, bc
+        push hl
+        ld a, h
+        or l
+        cp 60
+        jp nz, :--
+        di
         ret
 
+SECTION "Splash VBlank Interrupt Routine", ROM0
+VBlank_ISR:
+    reti
 
 SECTION "Splash Assets", ROM0
 tiles:
@@ -89,4 +135,7 @@ tilemap:
 .end
 palette:
         INCBIN "assets/splash.pal"
+.end
+fade_out_palettes:
+        INCBIN "assets/splash_fade_out_palettes.bin"
 .end
