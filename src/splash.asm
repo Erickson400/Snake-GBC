@@ -1,5 +1,10 @@
 INCLUDE "hardware.inc"
-INCLUDE "macros.inc"
+
+SECTION "Splash ram", WRAM0
+wFadePalettesAddress: 
+        dw
+wFadeOutCounter:
+        db
 
 SECTION "Splash Screen", ROM0
 SplashScreen::
@@ -54,68 +59,68 @@ SplashScreen::
         ; Scroll
         ld a, -25
         ld [rSCX], a
-        ld a, -50
+        ld a, -55
         ld [rSCY], a
 
         ; Turn on screen
         ld a, LCDC_ENABLE | LCDC_BLOCK01
-        ld [rLCDC], a
+        ldh [rLCDC], a
         
-        ; Fade out to black
         ; Setup VBlank interrupt
         ld bc, VBlank_ISR
-        ld hl, VBlankRoutineAddress
-        ld a, c
-        ld [hl+], a
-        ld a, b
-        ld [hl], a
+        ld hl, wVBlankRoutineAddress
+        call store_bc_at_address_hl
         ld a, IE_VBLANK
         ldh [rIE], a
+        ld hl, wVBlankRoutineAddress
+        call deref_hl
         ei
+        halt
+        nop
 
         ; Wait 120 frames (2 seconds)
-        ld a, 120
-:       halt
-        dec a
+        ld c, 120
+:       ld hl, wVBlankRoutineAddress
+        call deref_hl
+        halt
+        nop
+        dec c
         jp nz, :-
 
-        ;       fade_out_palette_address = fade_out_palettes
-        ;       for {
-        ;               wait_for_VBlank()
-        ;               Memcopy(game_palette, fade_out_palette_address, 16)
-        ;               fade_out_palette_address += 16
-        ;                if fade_out_palette_address == fade_out_palettes.end{
-        ;                        break
-        ;                }
-        ;       }
-        ; Fade palettes
-        ld bc, fade_out_palettes
-        push bc                         ; sp + 0. Fade-out palettes, 60 entries of 16 bytes
-:       halt
+        ; Start fading animation
+        ld bc, fade_out_palettes        ; Initialize fade palette address
+        ld a, c
+        ld [wFadePalettesAddress], a
+        ld a, b
+        ld [wFadePalettesAddress + 1], a
+        ld a, 60
+        ld [wFadeOutCounter], a
+.palette_animation_loop:
+        ld hl, wVBlankRoutineAddress
+        call deref_hl
+        halt
+        nop
         ld a, %1000_0000                ; auto-increment, CRAM address 0
         ld [rBGPI], a
-        DerefStackOffset 0
+        ld hl, wFadePalettesAddress
+        call deref_hl
         ld b, 16                         ; paste 16 bytes
 :       ld a, [hl+]
         ld [rBGPD], a
         dec b
         jr nz, :-
-        
-        ; Increment palette address
-        pop de
-        pop hl
-        ld bc, 16
-        add hl, bc
-        push hl
-        push de
-        pop hl                           ; Increment Counter
-        ld bc, 1
-        add hl, bc
-        push hl
-        ld a, h
-        or l
-        cp 60
-        jp nz, :--
+
+        ; Update palette address
+        ld b, h :: ld c, l
+        ld hl, wFadePalettesAddress
+        call store_bc_at_address_hl
+
+        ; Update counter
+        ld hl, wFadeOutCounter
+        ld a, [hl]
+        dec a
+        ld [hl], a
+        jp nz, .palette_animation_loop
         di
         ret
 

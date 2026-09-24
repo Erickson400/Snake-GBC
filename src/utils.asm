@@ -1,4 +1,39 @@
+INCLUDE "hardware.inc"
 SECTION "Utilities", ROM0
+
+; @mods: None
+wait_for_VBlank_busy::
+        push af
+:       ld a, [rLY]
+        cp LY_VBLANK
+        jp nz, :-
+        pop af
+        ret
+
+; Sets hl to the value at the address in hl
+; @mods: None
+deref_hl::
+        push af
+        push bc
+        ld a, [hl+]
+        ld c, a
+        ld a, [hl]
+        ld b, a
+        ld h, b :: ld l, c
+        pop bc
+        pop af
+        ret
+
+; @mods: None
+store_bc_at_address_hl::
+        push af
+        ld a, c
+        ld [hl+], a
+        ld a, b
+        ld [hl], a
+        dec hl
+        pop af
+        ret
 
 ; Copy bytes from one area to another
 ; @param de: Source

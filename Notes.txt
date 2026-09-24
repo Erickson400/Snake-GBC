@@ -1,0 +1,5 @@
+hl must be set to a VBlank Routine before halting. I made the jump address be in WRAM so that
+other files can load their own routines. The splash screen uses an empty routine since it only
+uses it to count frames.
+
+
