@@ -65,25 +65,10 @@ SplashScreen::
         ; Turn on screen
         ld a, LCDC_ENABLE | LCDC_BLOCK01
         ldh [rLCDC], a
-        
-        ; Setup VBlank interrupt
-        ld bc, VBlank_ISR
-        ld hl, wVBlankRoutineAddress
-        call store_bc_at_address_hl
-        ld a, IE_VBLANK
-        ldh [rIE], a
-        ld hl, wVBlankRoutineAddress
-        call deref_hl
-        ei
-        halt
-        nop
 
         ; Wait 120 frames (2 seconds)
         ld c, 120
-:       ld hl, wVBlankRoutineAddress
-        call deref_hl
-        halt
-        nop
+:       call wait_for_VBlank
         dec c
         jp nz, :-
 
@@ -96,10 +81,7 @@ SplashScreen::
         ld a, 60
         ld [wFadeOutCounter], a
 .palette_animation_loop:
-        ld hl, wVBlankRoutineAddress
-        call deref_hl
-        halt
-        nop
+        call wait_for_VBlank
         ld a, %1000_0000                ; auto-increment, CRAM address 0
         ld [rBGPI], a
         ld hl, wFadePalettesAddress
@@ -123,10 +105,6 @@ SplashScreen::
         jp nz, .palette_animation_loop
         di
         ret
-
-SECTION "Splash VBlank Interrupt Routine", ROM0
-VBlank_ISR:
-    reti
 
 SECTION "Splash Assets", ROM0
 tiles:

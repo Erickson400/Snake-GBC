@@ -9,7 +9,7 @@ entry_point:
         ld sp, Stack.top       ; Initialize the stack to be on WRAM
         
         ; Turn off screen
-        call wait_for_VBlank_busy
+        call wait_for_VBlank
         xor a
         ld [rLCDC], a
 
@@ -19,14 +19,7 @@ entry_point:
 
 :       jp :-
 
-SECTION "VBlank Interrupt Jump", ROM0[$40]
-; @param hl
-VBlank_Jump:
-        jp hl
-
 SECTION "System", WRAM0
 Stack::
         ds 256
 .top::
-wVBlankRoutineAddress::
-        dw

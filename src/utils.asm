@@ -2,11 +2,15 @@ INCLUDE "hardware.inc"
 SECTION "Utilities", ROM0
 
 ; @mods: None
-wait_for_VBlank_busy::
+wait_for_VBlank::
         push af
-:       ld a, [rLY]
-        cp LY_VBLANK
-        jp nz, :-
+        di
+        xor a
+        ldh [rIF], a
+        ld a, IE_VBLANK
+        ldh [rIE], a
+        halt
+        nop
         pop af
         ret
 
