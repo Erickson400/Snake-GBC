@@ -54,7 +54,7 @@ Memcopy::
         inc de
         dec bc
         ld a, b
-        or a, c
+        or c
         jp nz, :-
         pop hl
         pop de

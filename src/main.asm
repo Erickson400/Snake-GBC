@@ -16,6 +16,7 @@ entry_point:
         ld [rAUDENA], a         ; Disable audio
 
         call SplashScreen
+        call TitleScreen
 
 :       jp :-
 

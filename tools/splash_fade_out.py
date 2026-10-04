@@ -1,6 +1,5 @@
 from pathlib import Path
 import io
-import sys
 
 # I want 60 shades of the palette, not including the original palette.
 # The fade-out will take 1 second (aka 60 frames)
@@ -41,7 +40,6 @@ class Palettes:
         def write_to(self, file):
                 for color in self.colors:
                         color.write_to(file)
-
 
 def run():
         original_palettes = Palettes()
