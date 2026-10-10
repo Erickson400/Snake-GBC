@@ -67,7 +67,10 @@ def run():
             return
 
         # Fix
-        exec_result = subp.run(["rgbfix", "bin/snake.gbc", "--color-only", "--validate", "--title", "SNAKE"])
+        exec_result = subp.run(["rgbfix", "bin/snake.gbc", "--color-only", "--validate",
+                                "--title", "SNAKE",
+                                "--mbc-type", "MBC5+RAM+BATTERY",
+                                "--ram-size", "0x2"])
         if exec_result.returncode != 0:
             print(f"\n^ BUILD ERROR ^\n")
             print(exec_result.stdout, exec_result.stderr)

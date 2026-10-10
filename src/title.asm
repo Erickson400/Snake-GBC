@@ -5,6 +5,14 @@ wCopyOffset:
         dw
 wRowCount:
         db
+wHiScore:
+        dw
+
+SECTION "Saved data", SRAM
+sHiScore:
+        dw      ; In BCD form
+sSignature:
+        ds 3    ; 9, 10, 21
 
 SECTION "Title Screen", ROM0
 TitleScreen::
@@ -114,6 +122,33 @@ TitleScreen::
         ld [rBGPD], a
         dec c
         jr nz, :-
+
+        ; Load hi-score
+        ld a, $A
+        ld [0], a               ; Enable ram
+        ld a, [sHiScore] :: ld [wHiScore], a
+        ld a, [sHiScore + 1] :: ld [wHiScore + 1], a
+        ld hl, sSignature
+        ld a, [hl+]
+        cp 9
+        jr nz, .falseSignature
+        ld a, [hl+]
+        cp 10
+        jr nz, .falseSignature
+        ld a, [hl+]
+        cp 21
+        jr nz, .falseSignature
+        jr .validSignature
+.falseSignature:
+        ; Set score to 0 if false signature
+        xor a
+        ld [wHiScore], a
+        ld [wHiScore + 1], a
+.validSignature:
+        xor a
+        ld [0], a               ; Disable ram
+
+        
 
 
 
