@@ -7,6 +7,10 @@ wRowCount:
         db
 wHiScore:
         dw
+wFadePalettesAddress: 
+        dw
+wFadeInCounter:
+        db
 
 SECTION "Saved data", SRAM
 sHiScore:
@@ -16,65 +20,47 @@ sSignature:
 
 SECTION "Title Screen", ROM0
 TitleScreen::
-        ; Dont add fade-in for now
+        call wait_for_VBlank
+
+        ; Set palette to black
+        ld a, %1000_0000        ; auto-increment, CRAM address 0
+        ld [rBGPI], a
+        xor a
+        ld c, 8
+:       ld [rBGPD], a
+        dec c
+        jr nz, :-
 
         ; HDMA transfer for screen and digit tiles
-        ld a, HIGH(screen_tiles)
-        ld [rVDMA_SRC_HIGH], a
-        ld a, LOW(screen_tiles)
-        ld [rVDMA_SRC_LOW], a
-        ld a, HIGH($8000)
-        ld [rVDMA_DEST_HIGH], a
-        ld a, LOW($8000)
-        ld [rVDMA_DEST_LOW], a
+        ld a, HIGH(screen_tiles) :: ld [rVDMA_SRC_HIGH], a
+        ld a, LOW(screen_tiles)  :: ld [rVDMA_SRC_LOW], a
+        ld a, HIGH($8000)        :: ld [rVDMA_DEST_HIGH], a
+        ld a, LOW($8000)         :: ld [rVDMA_DEST_LOW], a
+        ld a, ((screen_tiles.end - screen_tiles) / 16) - 1
+        ld [rVDMA_LEN], a                                       ; Title transfer
         call wait_for_VBlank
-        ld a, 127
-        ld [rVDMA_LEN], a                       ; Title transfer 1/2
-        ld a, HIGH(screen_tiles + (16 * 127))
-        ld [rVDMA_SRC_HIGH], a
-        ld a, LOW(screen_tiles + (16 * 127))
-        ld [rVDMA_SRC_LOW], a
-        ld a, HIGH($8000 + (16 * 127))
-        ld [rVDMA_DEST_HIGH], a
-        ld a, LOW($8000 + (16 * 127))
-        ld [rVDMA_DEST_LOW], a
-        call wait_for_VBlank
-        ld a, 11
-        ld [rVDMA_LEN], a                       ; Title transfer 2/2
-        ld de, digit_tiles
-        ld hl, $88B0
-        ld bc, 4 * 16
-        call Memcopy                            ; Digits transfer 1/3
-        call wait_for_VBlank
-        ld de, digit_tiles + (4 * 16)
-        ld hl, $88B0 + (4 * 16)
-        ld bc, 4 * 16
-        call Memcopy                            ; Digits transfer 2/3
-        call wait_for_VBlank
-        ld de, digit_tiles + (8 * 16)
-        ld hl, $88B0 + (8 * 16)
-        ld bc, 2 * 16
-        call Memcopy                            ; Digits transfer 3/3
-        call wait_for_VBlank
+        ld a, HIGH(digit_tiles) :: ld [rVDMA_SRC_HIGH], a
+        ld a, LOW(digit_tiles)  :: ld [rVDMA_SRC_LOW], a
+        ld a, HIGH($8800)       :: ld [rVDMA_DEST_HIGH], a
+        ld a, LOW($8800)        :: ld [rVDMA_DEST_LOW], a
+        ld a, ((digit_tiles.end - digit_tiles) / 16) - 1
+        ld [rVDMA_LEN], a                                       ; Digits transfer
 
         ; Copy tilemap to VRAM
-        ld a, 18
-        ld [wRowCount], a
-        ld a, LOW(screen_tilemap)
-        ld [wCopyOffset], a
-        ld a, HIGH(screen_tilemap)
-        ld [wCopyOffset + 1], a
+        ld a, 18                   :: ld [wRowCount], a
+        ld a, LOW(screen_tilemap)  :: ld [wCopyOffset], a
+        ld a, HIGH(screen_tilemap) :: ld [wCopyOffset + 1], a
         ld hl, $9800
 .copyLoopTilemap:
         call wait_for_VBlank
-        ld a, [wCopyOffset] :: ld e, a
+        ld a, [wCopyOffset]     :: ld e, a
         ld a, [wCopyOffset + 1] :: ld d, a
         ld bc, 20
         call Memcopy
         ld bc, 32
         add hl, bc
         push hl
-        ld a, [wCopyOffset] :: ld l, a
+        ld a, [wCopyOffset]     :: ld l, a
         ld a, [wCopyOffset + 1] :: ld h, a
         ld de, 20
         add hl, de
@@ -89,10 +75,8 @@ TitleScreen::
         jp nz, .copyLoopTilemap
 
         ; Clear the attributes
-        ld a, 1
-        ld [rVBK], a
-        ld a, 18
-        ld [wRowCount], a
+        ld a, 1  :: ld [rVBK], a
+        ld a, 18 :: ld [wRowCount], a
         ld hl, $9800
 .copyLoopAttr:
         call wait_for_VBlank
@@ -105,27 +89,16 @@ TitleScreen::
         dec a
         ld [wRowCount], a
         jp nz, .copyLoopAttr
-        xor a
-        ld [rVBK], a
+        xor a :: ld [rVBK], a
 
         ; Scroll
         xor a
         ld [rSCX], a
         ld [rSCY], a
 
-        ; Copy palettes to CRAM
-        ld a, %1000_0000        ; auto-increment, CRAM address 0
-        ld [rBGPI], a
-        ld hl, screen_palette
-        ld c, screen_palette.end - screen_palette
-:       ld a, [hl+]
-        ld [rBGPD], a
-        dec c
-        jr nz, :-
-
         ; Load hi-score
         ld a, $A
-        ld [0], a               ; Enable ram
+        ld [0], a               ; Enable sram
         ld a, [sHiScore] :: ld [wHiScore], a
         ld a, [sHiScore + 1] :: ld [wHiScore + 1], a
         ld hl, sSignature
@@ -146,15 +119,44 @@ TitleScreen::
         ld [wHiScore + 1], a
 .validSignature:
         xor a
-        ld [0], a               ; Disable ram
-
-        
+        ld [0], a               ; Disable sram
 
 
+        ;
+        ; TODO: ender the digits
+        ;
+
+
+        ; Start fading animation
+        ld bc, fade_in_palette          ; Initialize fade palette address
+        ld a, c  :: ld [wFadePalettesAddress], a
+        ld a, b  :: ld [wFadePalettesAddress + 1], a
+        ld a, 60 :: ld [wFadeInCounter], a
+.palette_animation_loop:
+        call wait_for_VBlank
+        ld a, %1000_0000                ; auto-increment, CRAM address 0
+        ld [rBGPI], a
+        ld hl, wFadePalettesAddress
+        call deref_hl
+        ld b, 8                         ; paste 8 bytes
+:       ld a, [hl+]
+        ld [rBGPD], a
+        dec b
+        jr nz, :-
+        ld b, h :: ld c, l               ; Update palette address
+        ld hl, wFadePalettesAddress
+        call store_bc_at_address_hl
+        ld hl, wFadeInCounter           ; Update counter
+        ld a, [hl]
+        dec a
+        ld [hl], a
+        jp nz, .palette_animation_loop
+
+        ;
+        ; TODO: Blinking Press Start
+        ;
 
         ret
-
-
 
 SECTION "Title Assets", ROM0
 ALIGN 4
@@ -165,9 +167,16 @@ screen_tiles:
 screen_tilemap:
         INCBIN "assets/title.tilemap"
 .end
-screen_palette:
-        INCBIN "assets/title.pal"
-.end
+ALIGN 4
 digit_tiles:
         INCBIN "assets/digits.2bpp"
+        DS ALIGN [4, 0]
+.end
+ALIGN 4
+empty32:
+        DS 32
+        DS ALIGN [4, 0]
+.end
+fade_in_palette:
+        INCBIN "assets/title_fade_in_palette.bin"
 .end

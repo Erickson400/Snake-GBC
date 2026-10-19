@@ -103,7 +103,6 @@ SplashScreen::
         dec a
         ld [hl], a
         jp nz, .palette_animation_loop
-        di
         ret
 
 SECTION "Splash Assets", ROM0

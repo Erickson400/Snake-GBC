@@ -6,12 +6,12 @@ SECTION "Header", ROM0[$100]
         ds $150 - @, 0
 SECTION "Main", ROM0
 entry_point:
-        ld sp, Stack.top       ; Initialize the stack to be on WRAM
+        di
+        ld sp, Stack.top       ; Initialize the stack to be in WRAM
         
         ; Turn off screen
         call wait_for_VBlank
-        xor a
-        ld [rLCDC], a
+        xor a :: ld [rLCDC], a
 
         ld [rAUDENA], a         ; Disable audio
 
