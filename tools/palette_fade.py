@@ -100,7 +100,7 @@ def create_title_palette():
         print(f"Original Palettes: {original_palette}")
 
         palette_shades: list[Palette] = []
-        lerp_t = 0.936          # Trying to keep it decrease steadily, till the last palette is all zeros
+        lerp_t = 0.933          # Trying to keep it decrease steadily, till the last palette is all zeros
         for i in range(60):
                 if i == 0:
                         new_palette = original_palette.duplicate()
