@@ -17,6 +17,7 @@ entry_point:
 
         call SplashScreen
         call TitleScreen
+        call LevelScreen
 
 :       jp :-
 

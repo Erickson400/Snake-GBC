@@ -5,7 +5,7 @@ wCopyOffset:
         dw
 wRowCount:
         db
-wHiScore:
+wHiScore::
         dw
 wFadePalettesAddress: 
         dw
@@ -17,9 +17,9 @@ wIsStartVisible:
         db
 
 SECTION "Saved data", SRAM
-sHiScore:
+sHiScore::
         dw      ; In BCD form
-sSignature:
+sSignature::
         ds 3    ; 9, 10, 21
 
 SECTION "Title Screen", ROM0
@@ -129,7 +129,7 @@ TitleScreen::
         ld a, [wHiScore + 1]
         and $F
         add $80
-        ld hl, $9A26
+        ld hl, $9A26    ; Hi-score tiles
         ld [hl], a
         ld a, [wHiScore]
         srl a :: srl a :: srl a :: srl a
@@ -186,10 +186,16 @@ TitleScreen::
         ld a, 1 :: ld [wIsStartVisible], a
 .titleLoop:
         call wait_for_VBlank
-        ;
-        ; Check if start is pressed,
-        ; if so then exit loop or return.
-        ;
+
+        ; Check if start is pressed, if so then return.
+        ld hl, rP1
+        res 4, [hl]
+        bit 3, [hl]
+        jr nz, .startNotPressed
+        pop bc
+        ret
+.startNotPressed:
+
         ld a, [wFrameCounter]
         cp 30
         jp nz, .counterNotFinished
@@ -233,7 +239,7 @@ screen_tilemap:
         INCBIN "assets/title.tilemap"
 .end
 DS ALIGN [4, 0]
-digit_tiles:
+digit_tiles::
         INCBIN "assets/digits.2bpp"
         DS ALIGN [4, 0]
 .end
