@@ -5,7 +5,7 @@ wCopyOffset:
         dw
 wRowCount:
         db
-wScore:
+wScore::
         dw
 
 SECTION "Level Screen", ROM0
@@ -28,6 +28,8 @@ LevelScreen::
         ld a, LOW($8000)         :: ld [rVDMA_DEST_LOW], a
         ld a, ((level_tiles.end - level_tiles) / 16) - 1
         ld [rVDMA_LEN], a
+
+        call LoadSnakeTiles
 
         ; Copy tilemap to VRAM
         ld a, 18                  :: ld [wRowCount], a
@@ -70,6 +72,8 @@ LevelScreen::
         ld [rBGPD], a
         dec c
         jr nz, :-
+
+        call LoadSnakePalette
 
         ; Set digit palette to 1 in attributes
         ld a, 1  :: ld [rVBK], a
@@ -129,7 +133,15 @@ LevelScreen::
         ld hl, $9A28
         ld [hl], a
 
-        ; Render Score digits
+        call RenderScoreDigits
+
+        ; Turn on screen
+        ld a, LCDC_ENABLE | LCDC_BLOCK01
+        ldh [rLCDC], a
+
+        ret
+
+RenderScoreDigits:
         ld a, [wScore + 1]
         and $F
         add $80
@@ -145,11 +157,6 @@ LevelScreen::
         add $80
         ld hl, $9A32
         ld [hl], a
-
-        ; Turn on screen
-        ld a, LCDC_ENABLE | LCDC_BLOCK01
-        ldh [rLCDC], a
-
         ret
 
 SECTION "Level Assets", ROM0

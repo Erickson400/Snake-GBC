@@ -26,6 +26,10 @@ SECTION "Title Screen", ROM0
 TitleScreen::
         call wait_for_VBlank
 
+        ; Initialize RNG seed
+        ld a, 23  ::ld [wRNGNumberLow], a
+        ld a, 116 ::ld [wRNGNumberHigh], a
+
         ; Set palette to black
         ld a, %1000_0000        ; auto-increment, CRAM address 0
         ld [rBGPI], a
@@ -186,6 +190,14 @@ TitleScreen::
         ld a, 1 :: ld [wIsStartVisible], a
 .titleLoop:
         call wait_for_VBlank
+
+        ; Increment RNG variable
+        ld a, [wRNGNumberLow]   :: ld l, a
+        ld a, [wRNGNumberHigh] :: ld h, a
+        ld bc, 1
+        add hl, bc
+        ld a, l :: ld [wRNGNumberLow], a
+        ld a, h :: ld [wRNGNumberHigh], a
 
         ; Check if start is pressed, if so then return.
         ld hl, rP1

@@ -1,5 +1,35 @@
 INCLUDE "hardware.inc"
+
+SECTION "Utilities RAM", WRAM0
+wRNGNumberLow:: db
+wRNGNumberHigh:: db
+
 SECTION "Utilities", ROM0
+; Modified the wRNGNumbeber variable.
+rng_function::
+        ; Shift right
+        ld a, [wRNGNumberHigh]
+        srl a
+        ld [wRNGNumberHigh], a
+        ld a, [wRNGNumberLow]
+        rr a
+        ld [wRNGNumberLow], a
+
+        ; Return if shifted bit is 0
+        ret z
+
+        ; XOR the Low
+        ld a, [wRNGNumberLow]
+        ld b, %0011_0010
+        xor b
+        ld [wRNGNumberLow], a
+
+        ; XOR the High
+        ld a, [wRNGNumberHigh]
+        ld b, %1010_0101
+        xor b
+        ld [wRNGNumberHigh], a
+        ret
 
 ; @mods: None
 wait_for_VBlank::
