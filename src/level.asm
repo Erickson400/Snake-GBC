@@ -134,6 +134,8 @@ LevelScreen::
         ld [hl], a
 
         call RenderScoreDigits
+        call InitializeSnake
+        call InitializeApple
 
         ; Turn on screen
         ld a, LCDC_ENABLE | LCDC_BLOCK01
