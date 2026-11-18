@@ -16,15 +16,11 @@ def BODY_V    equ 38
 def CORNER_LU equ 38
 
 SECTION "Snake ram", WRAM0
-wEmptyTilesListPointer: dw      ; Points to the next empty slot
-wEmptyTilesList: ds 300 * 2     ; Each byte has an X and Y nybble
-
 wSnakeDirection: db             ; RIGHT, DOWN, LEFT, UP
 wSnakeBodyPointer: dw           ; Points to the next empty slot
 wSnakeBodyList: ds 300 * 2      ; Each byte has a tilemap address. The first is the head, the last is the tail
 
 SECTION "Snake Screen", ROM0
-
 InitializeSnake::
         ld a, RIGHT :: ld [wSnakeDirection], a
 
@@ -64,11 +60,11 @@ InitializeSnake::
         ret
 
 LoadSnakeTiles::
-        ld a, HIGH(snake_tiles)  :: ld [rVDMA_SRC_HIGH], a
-        ld a, LOW(snake_tiles)   :: ld [rVDMA_SRC_LOW], a
+        ld a, HIGH(object_tiles)  :: ld [rVDMA_SRC_HIGH], a
+        ld a, LOW(object_tiles)   :: ld [rVDMA_SRC_LOW], a
         ld a, HIGH($8200)        :: ld [rVDMA_DEST_HIGH], a
         ld a, LOW($8200)         :: ld [rVDMA_DEST_LOW], a
-        ld a, ((snake_tiles.end - snake_tiles) / 16) - 1
+        ld a, ((object_tiles.end - object_tiles) / 16) - 1
         ld [rVDMA_LEN], a
         ret
 
@@ -82,19 +78,9 @@ LoadSnakePalette::
         jr nz, :-
         ret
 
-InitializeApple::
-        ; Count and append the addresses of the empty tiles.
-
-        ; Get a random tile from that list.
-
-
-        ; Set that tilemap location to the Apple tile.
-
-        ret
-
 SECTION "Snake Assets", ROM0
 DS ALIGN [4, 0]
-snake_tiles:
+object_tiles:
         INCBIN "assets/level_snake.2bpp"
         DS ALIGN [4, 0]
 .end

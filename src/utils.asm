@@ -1,4 +1,14 @@
 INCLUDE "hardware.inc"
+INCLUDe "macros.inc"
+
+enum_exported Tile, 0x8000, 16
+        enum_value Ground        ; 0x8000
+        enum_value Water         ; 0x8010
+        enum_value Pickup        ; 0x8020
+        enum_value Door          ; 0x8030
+enumend
+
+println Tile_Door
 
 SECTION "Utilities RAM", WRAM0
 wRNGNumberLow:: db
@@ -75,10 +85,6 @@ store_bc_at_address_hl::
 ; @param bc: Length
 ; @mods: None
 Memcopy::
-        push af
-        push bc
-        push de
-        push hl
 :       ld a, [de]
         ld [hl+], a
         inc de
@@ -86,10 +92,6 @@ Memcopy::
         ld a, b
         or c
         jp nz, :-
-        pop hl
-        pop de
-        pop bc
-        pop af
         ret
 
 ; Set a range of bytes to a single value
@@ -98,18 +100,10 @@ Memcopy::
 ; @param d: Value
 ; @mods: None
 Memset::
-        push af
-        push bc
-        push de
-        push hl
 :       ld a, d
         ld [hl+], a
         dec bc
         ld a, b
         or a, c
         jp nz, :-
-        pop hl
-        pop de
-        pop bc
-        pop af
         ret
